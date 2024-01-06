@@ -1,10 +1,29 @@
 #include "system.h"
 
+
+double distance( microscopic_system_t * sys, const size_t i, const size_t j){
+    double dist_x = ( sys->px[i] - sys->px[j] );
+    double dist_y = ( sys->py[i] - sys->py[j] );
+    double dist_z = ( sys->pz[i] - sys->pz[j] );
+
+    return sqrt( dist_x * dist_x + dist_y * dist_y + dist_z * dist_z );
+}
+
+double squared_distance( microscopic_system_t * sys, const size_t i, const size_t j){
+    double dist_x = ( sys->px[i] - sys->px[j] );
+    double dist_y = ( sys->py[i] - sys->py[j] );
+    double dist_z = ( sys->pz[i] - sys->pz[j] );
+
+    return dist_x * dist_x + dist_y * dist_y + dist_z * dist_z ;
+}
+
+
+
 int print_system( microscopic_system_t sys ){
 
     printf("x\ty\tz\n");
     for (size_t i = 0; i < sys.N_particules_total; i++) {
-        printf("%lf\t%lf\t%lf\n", sys.px[i], sys.py[i], sys.pz[i]);
+        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.px[i], sys.py[i], sys.pz[i]);
     }
     return 0;
 }
@@ -31,15 +50,20 @@ int free_system( microscopic_system_t sys ){
     free(sys.py);
     free(sys.pz);
 
+    free(sys.fx);
+    free(sys.fy);
+    free(sys.fz);
+
+
     return 0;
 }
 
 
 int parse_system_data( microscopic_system_t * sys, char * filename ){
-    FILE *fichier;
-    fichier = fopen(filename, "r");
+    FILE * fp;
+    fp = fopen(filename, "r");
 
-    if (fichier == NULL) {
+    if (fp == NULL) {
         perror("error when opening particule system file");
         return 1;
     }
@@ -50,15 +74,15 @@ int parse_system_data( microscopic_system_t * sys, char * filename ){
     double * z = malloc( MAX_LINES * sizeof(double) );
 
     // Ignorer la première ligne
-    fscanf(fichier, "%*d %*d");
+    fscanf(fp, "%*d %*d");
 
     // Lire les données et stocker dans les tableaux
-    while (fscanf(fichier, "%*d %lf %lf %lf", &x[indice], &y[indice], &z[indice]) == 3) {
+    while (fscanf(fp, "%*d %lf %lf %lf", &x[indice], &y[indice], &z[indice]) == 3) {
         indice++;
     }
 
-    // Fermer le fichier
-    fclose(fichier);
+    // Fermer le fp
+    fclose(fp);
 
     allocate_system(sys, indice);
     
