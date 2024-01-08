@@ -1,19 +1,31 @@
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
+
 #include "system.h"
 
 
-double distance( microscopic_system_t * sys, const size_t i, const size_t j){
-    double dist_x = ( sys->px[i] - sys->px[j] );
-    double dist_y = ( sys->py[i] - sys->py[j] );
-    double dist_z = ( sys->pz[i] - sys->pz[j] );
+double distance( microscopic_system_t * sys, const size_t i, 
+                        const size_t j, const dim3_t offset){
+
+    double dist_x = ( sys->px[i] - ( sys->px[j] + offset.x ) );
+    double dist_y = ( sys->py[i] - ( sys->py[j] + offset.y ) );
+    double dist_z = ( sys->pz[i] - ( sys->pz[j] + offset.z ) );
 
     return sqrt( dist_x * dist_x + dist_y * dist_y + dist_z * dist_z );
 }
 
-double squared_distance( microscopic_system_t * sys, const size_t i, const size_t j){
-    double dist_x = ( sys->px[i] - sys->px[j] );
-    double dist_y = ( sys->py[i] - sys->py[j] );
-    double dist_z = ( sys->pz[i] - sys->pz[j] );
+double squared_distance( microscopic_system_t * sys, const size_t i, 
+                        const size_t j, const dim3_t offset){
+    double dist_x = ( sys->px[i] - ( sys->px[j] + offset.x ) );
+    double dist_y = ( sys->py[i] - ( sys->py[j] + offset.y ) );
+    double dist_z = ( sys->pz[i] - ( sys->pz[j] + offset.z ) );
 
+    // if(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z < 0.05){
+    //     printf(" %lu %lu  = %f\n", i, j, sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z));
+    // }
     return dist_x * dist_x + dist_y * dist_y + dist_z * dist_z ;
 }
 

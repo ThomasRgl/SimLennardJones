@@ -3,17 +3,17 @@
 #include <stdio.h>
 
 
-
 int main() {
+    int n_sym = 27;
 
     microscopic_system_t sys;
     parse_system_data(&sys, "../data/particule.xyz");
-    print_system(sys);
-    printf("ljs potential : %f \n", ljs_potential(&sys) );
+    // print_system(sys);
+    printf("(%d) ljs potential : %f \n", n_sym, ljs_potential(&sys, n_sym) );
 
-    ljs_forces( &sys );
+    ljs_forces( &sys, n_sym );
     double sum = ljs_sum_forces( &sys );
-    printf("ljs sum forces : %.30f \n", sum );
+    printf("(%d) ljs sum forces : %g \n", n_sym, sum );
     
     free_system(sys);
 
