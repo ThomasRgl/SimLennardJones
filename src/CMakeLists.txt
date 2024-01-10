@@ -3,7 +3,9 @@
 add_library( ljs STATIC
         # store.c ${CURRENT_INCLUDE_DIR}/store.h
         system.c ${INCLUDE_DIR}/system.h
-        ljs.c ${INCLUDE_DIR}/ljs.h
+        simulation.c ${INCLUDE_DIR}/simulation.h
+        # velocity_verlet.c ${INCLUDE_DIR}/velocity_verlet.h
+        io.c ${INCLUDE_DIR}/io.h
 
         # ${INCLUDE_DIR}/type.h
         # ${INCLUDE_DIR}/global.h

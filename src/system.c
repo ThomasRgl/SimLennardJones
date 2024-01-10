@@ -1,3 +1,4 @@
+#include <iso646.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,23 +6,24 @@
 
 
 #include "system.h"
+#include "io.h"
 
 
 double distance( microscopic_system_t * sys, const size_t i, 
                         const size_t j, const dim3_t offset){
 
-    double dist_x = ( sys->px[i] - ( sys->px[j] + offset.x ) );
-    double dist_y = ( sys->py[i] - ( sys->py[j] + offset.y ) );
-    double dist_z = ( sys->pz[i] - ( sys->pz[j] + offset.z ) );
+    double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
+    double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
+    double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
 
     return sqrt( dist_x * dist_x + dist_y * dist_y + dist_z * dist_z );
 }
 
 double squared_distance( microscopic_system_t * sys, const size_t i, 
                         const size_t j, const dim3_t offset){
-    double dist_x = ( sys->px[i] - ( sys->px[j] + offset.x ) );
-    double dist_y = ( sys->py[i] - ( sys->py[j] + offset.y ) );
-    double dist_z = ( sys->pz[i] - ( sys->pz[j] + offset.z ) );
+    double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
+    double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
+    double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
 
     // if(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z < 0.05){
     //     printf(" %lu %lu  = %f\n", i, j, sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z));
@@ -33,10 +35,22 @@ double squared_distance( microscopic_system_t * sys, const size_t i,
 
 int print_system( microscopic_system_t sys ){
 
+    printf("----------------------------------------\n");
     printf("x\ty\tz\n");
-    for (size_t i = 0; i < sys.N_particules_total; i++) {
-        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.px[i], sys.py[i], sys.pz[i]);
+    for (size_t i = 0; i < sys.N_particules_local; i++) {
+        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.x[i], sys.y[i], sys.z[i]);
     }
+    
+    printf("\n\nvx\tvy\tvz\n");
+    for (size_t i = 0; i < sys.N_particules_local; i++) {
+        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.vx[i], sys.vy[i], sys.vz[i]);
+    }
+
+    printf("\n\nfx\tfy\tfz\n");
+    for (size_t i = 0; i < sys.N_particules_local; i++) {
+        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.fx[i], sys.fy[i], sys.fz[i]);
+    }
+    printf("----------------------------------------\n");
     return 0;
 }
 
@@ -45,64 +59,80 @@ int allocate_system( microscopic_system_t * sys, size_t indice ){
     sys->N_particules_total = indice;
     sys->N_particules_local = indice;
 
-    sys->px = aligned_alloc(32, indice * sizeof(double) );
-    sys->py = aligned_alloc(32, indice * sizeof(double) );
-    sys->pz = aligned_alloc(32, indice * sizeof(double) );
+    // aligned alloc is chouining
+    sys->x = aligned_alloc(32, indice * sizeof(double) );
+    sys->y = aligned_alloc(32, indice * sizeof(double) );
+    sys->z = aligned_alloc(32, indice * sizeof(double) );
 
     sys->fx = aligned_alloc(32, indice * sizeof(double) );
     sys->fy = aligned_alloc(32, indice * sizeof(double) );
     sys->fz = aligned_alloc(32, indice * sizeof(double) );
 
-       
+    sys->vx = aligned_alloc(32, indice * sizeof(double) );
+    sys->vy = aligned_alloc(32, indice * sizeof(double) );
+    sys->vz = aligned_alloc(32, indice * sizeof(double) );
+
+    sys->px = aligned_alloc(32, indice * sizeof(double) );
+    sys->py = aligned_alloc(32, indice * sizeof(double) );
+    sys->pz = aligned_alloc(32, indice * sizeof(double) );
+ 
+    memset(sys->fx, 0, indice * sizeof(double) );
+    memset(sys->fy, 0, indice * sizeof(double) );
+    memset(sys->fz, 0, indice * sizeof(double) );
+   
+    memset(sys->vx, 0, indice * sizeof(double) );
+    memset(sys->vy, 0, indice * sizeof(double) );
+    memset(sys->vz, 0, indice * sizeof(double) );
+
+    memset(sys->px, 0, indice * sizeof(double) );
+    memset(sys->py, 0, indice * sizeof(double) );
+    memset(sys->pz, 0, indice * sizeof(double) );
+
+      
     return 0;
 }
 
 int free_system( microscopic_system_t sys ){
-    free(sys.px);
-    free(sys.py);
-    free(sys.pz);
+    free(sys.x);
+    free(sys.y);
+    free(sys.z);
 
     free(sys.fx);
     free(sys.fy);
     free(sys.fz);
 
+    free(sys.vx);
+    free(sys.vy);
+    free(sys.vz);
+
+    free(sys.px);
+    free(sys.py);
+    free(sys.pz);
+
 
     return 0;
 }
 
 
-int parse_system_data( microscopic_system_t * sys, char * filename ){
-    FILE * fp;
-    fp = fopen(filename, "r");
+int create_system( microscopic_system_t * sys, const char * filename ){
+    
+    double * x; 
+    double * y;
+    double * z;
 
-    if (fp == NULL) {
-        perror("error when opening particule system file");
-        return 1;
-    }
 
-    size_t indice = 0;
-    double * x = malloc( MAX_LINES * sizeof(double) );
-    double * y = malloc( MAX_LINES * sizeof(double) );
-    double * z = malloc( MAX_LINES * sizeof(double) );
-
-    // Ignorer la première ligne
-    fscanf(fp, "%*d %*d");
-
-    // Lire les données et stocker dans les tableaux
-    while (fscanf(fp, "%*d %lf %lf %lf", &x[indice], &y[indice], &z[indice]) == 3) {
-        indice++;
-    }
-
-    // Fermer le fp
-    fclose(fp);
-
+    size_t indice = parse_data(filename, &x, &y, &z);
     allocate_system(sys, indice);
     
     for (size_t i = 0; i < indice; i++) {
-        sys->px[i] = x[i];
-        sys->py[i] = y[i];
-        sys->pz[i] = z[i];
+        sys->x[i] = x[i];
+        sys->y[i] = y[i];
+        sys->z[i] = z[i];
     }
+
+    sys->dimx = 30;
+    sys->dimy = 30;
+    sys->dimz = 30;
 
     
 
