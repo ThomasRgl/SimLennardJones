@@ -87,7 +87,10 @@ size_t parse_data( const char * filename, double ** x, double ** y, double ** z 
     // Lire les données et stocker dans les tableaux
     while (fscanf(fp, "%*d %lf %lf %lf", &(*x)[indice], &(*y)[indice], &(*z)[indice]) == 3) {
         indice++;
+        // printf("{%f; %f; %f}\n", (*x)[indice], (*y)[indice], (*z)[indice]);
     }
+
+
 
     // Fermer le fp
     fclose(fp);
@@ -95,3 +98,17 @@ size_t parse_data( const char * filename, double ** x, double ** y, double ** z 
     return indice;
 
 }
+
+
+int init_log( FILE * fp_log ){
+    fprintf(fp_log, "cinetic_energy;temp;ljs_potential;sum_forces\n");
+    return 0;
+}
+
+int add_log( FILE * fp_log, microscopic_system_t * sys){
+    fprintf(fp_log, "%g;%g;%g;%g\n", sys->cinetic_energy, 
+            sys->temperature, sys->potential_energy, sys->sum_forces);
+
+    return 0;
+}
+

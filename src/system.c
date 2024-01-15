@@ -6,31 +6,32 @@
 
 
 #include "system.h"
+#include "simulation.h"
 #include "io.h"
 
-
-double distance( microscopic_system_t * sys, const size_t i, 
-                        const size_t j, const dim3_t offset){
-
-    double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
-    double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
-    double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
-
-    return sqrt( dist_x * dist_x + dist_y * dist_y + dist_z * dist_z );
-}
-
-double squared_distance( microscopic_system_t * sys, const size_t i, 
-                        const size_t j, const dim3_t offset){
-    double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
-    double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
-    double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
-
-    // if(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z < 0.05){
-    //     printf(" %lu %lu  = %f\n", i, j, sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z));
-    // }
-    return dist_x * dist_x + dist_y * dist_y + dist_z * dist_z ;
-}
-
+//
+// double distance( microscopic_system_t * sys, const size_t i, 
+//                         const size_t j, const dim3_t offset){
+//
+//     double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
+//     double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
+//     double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
+//
+//     return sqrt( dist_x * dist_x + dist_y * dist_y + dist_z * dist_z );
+// }
+//
+// double squared_distance( microscopic_system_t * sys, const size_t i, 
+//                         const size_t j, const dim3_t offset){
+//     double dist_x = ( sys->x[i] - ( sys->x[j] + offset.x ) );
+//     double dist_y = ( sys->y[i] - ( sys->y[j] + offset.y ) );
+//     double dist_z = ( sys->z[i] - ( sys->z[j] + offset.z ) );
+//
+//     // if(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z < 0.05){
+//     //     printf(" %lu %lu  = %f\n", i, j, sqrt(dist_x * dist_x + dist_y * dist_y + dist_z * dist_z));
+//     // }
+//     return dist_x * dist_x + dist_y * dist_y + dist_z * dist_z ;
+// }
+//
 
 
 int print_system( microscopic_system_t sys ){
@@ -51,6 +52,13 @@ int print_system( microscopic_system_t sys ){
         printf("%lu\t%lf\t%lf\t%lf\n",i, sys.fx[i], sys.fy[i], sys.fz[i]);
     }
     printf("----------------------------------------\n");
+
+    printf("\n\npx\tpy\tpz\n");
+    for (size_t i = 0; i < sys.N_particules_local; i++) {
+        printf("%lu\t%lf\t%lf\t%lf\n",i, sys.px[i], sys.py[i], sys.pz[i]);
+    }
+    printf("----------------------------------------\n");
+
     return 0;
 }
 
@@ -88,6 +96,13 @@ int allocate_system( microscopic_system_t * sys, size_t indice ){
     memset(sys->py, 0, indice * sizeof(double) );
     memset(sys->pz, 0, indice * sizeof(double) );
 
+    sys->cinetic_energy = -1;
+    sys->potential_energy = -1;
+    sys->temperature = -1;
+    sys->sum_forces = -1;
+
+
+
       
     return 0;
 }
@@ -114,6 +129,7 @@ int free_system( microscopic_system_t sys ){
 }
 
 
+
 int create_system( microscopic_system_t * sys, const char * filename ){
     
     double * x; 
@@ -130,9 +146,11 @@ int create_system( microscopic_system_t * sys, const char * filename ){
         sys->z[i] = z[i];
     }
 
-    sys->dimx = 30;
-    sys->dimy = 30;
-    sys->dimz = 30;
+    const double L_ = 32;
+
+    sys->dimx = L_;
+    sys->dimy = L_;
+    sys->dimz = L_;
 
     
 

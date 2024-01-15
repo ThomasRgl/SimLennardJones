@@ -10,8 +10,6 @@ add_subdirectory(deps/argtable)
 
 set(INCLUDE_DIR ${CMAKE_SOURCE_DIR}/include)
 
-set(SOURCES src/main.c src/eig.c)
-
 
 add_subdirectory(src)
 add_subdirectory(apps)

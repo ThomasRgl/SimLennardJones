@@ -30,7 +30,11 @@ typedef struct {
     double dimz;
 
     double cinetic_energy;
+    double potential_energy;
     double temperature;
+    double sum_forces;
+
+    double mass;
 
     size_t N_particules_local;
     size_t N_particules_total;
