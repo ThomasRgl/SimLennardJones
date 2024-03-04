@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm, Normalize
 
 df = pd.read_csv('../logs/log.csv', delimiter=';')
+# df = pd.read_csv('../trajectories/save/15_janvier_logs.csv', delimiter=';')
 
 cinematic_energy = df["cinetic_energy"]
 potential_energy = df["ljs_potential"]
@@ -12,7 +13,7 @@ sum_forces = df["sum_forces"]
 x = [ i for i in range( len(temperature))]
 
 # Create a figure with subplots
-plt.figure(figsize=(10, 6))
+plt.figure(figsize=(15, 9))
 
 # Plot the first subplot
 plt.subplot(2, 2, 1)
@@ -34,8 +35,9 @@ plt.title("sum of forces")
 
 # Show the plots
 plt.tight_layout()
-plt.show()
+
 plt.savefig("../img/result.png")
+plt.show()
 
 
 

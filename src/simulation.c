@@ -3,6 +3,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdbool.h>
+#include <omp.h>
 
 #include "simulation.h"
 #include "system.h"
@@ -10,7 +11,7 @@
 
 const double r_star = 3.0;
 const double epsilon = 0.2;
-const double L = 32;
+const double L = 33;
 const double Rcut = 10;
 const double T0 = 300;
 const double CONSTANTE_R = 0.00199;
@@ -21,9 +22,10 @@ const double gamma_ = 0.01;
 int init_simulation( microscopic_system_t * sys, simulation_config_t config ){
 
     initialize_moments( sys );
-    correct_moments( sys );
+
     calibrate_moments( sys );
     correct_moments( sys );
+    calibrate_moments( sys );
 
     return 0;
 
@@ -67,7 +69,9 @@ int start_simulation( microscopic_system_t * sys, const char * trajectory_filena
         compute_temperature(sys);
         ljs_sum_forces(sys);
 
-        warning(sys);
+        // ljs_sum_speed(sys);
+
+        // warning(sys);
 
         if( verbose >= 1 ){
             printf("(%d) ljs potential : %f \n", n_sym, sys->potential_energy );
@@ -87,7 +91,8 @@ int start_simulation( microscopic_system_t * sys, const char * trajectory_filena
         // update system
         velocity_verlet_update( sys, n_sym, dt, mass);
         compute_cinetic_energy(sys, mass);
-        Berendsen_thermostat(sys);
+        // if( i < 400 )
+            Berendsen_thermostat(sys);
         correct_position(sys);
 
 
@@ -118,6 +123,8 @@ double ljs( microscopic_system_t * sys, size_t N_sym){
 
     for (size_t i = 0; i < N; i++) {
         for (size_t j = i + 1; j < N; j++) {
+
+            // printf("Central box : %3lu %3lu \n", i, j );
 
             double distance_x = sys->x[i] - sys->x[j] + 0.f;
             double distance_y = sys->y[i] - sys->y[j] + 0.f;
@@ -164,14 +171,18 @@ double ljs( microscopic_system_t * sys, size_t N_sym){
         
     }
 
+    #pragma omp parallel for
     for (int l = 1; l < N_sym; l++) {
 
         double offset_x = ((l + 1) % 3 - 1) * L ;
         double offset_y = ((l / 3 + 1) % 3 - 1) * L ;
         double offset_z = ((l / 9 + 1) % 3 - 1) * L;
 
+        // printf(" ========================= \n" );
         for (size_t i = 0; i < N; i++) {
             for (size_t j = 0; j < N; j++) {
+
+                // printf("Periodic : %3lu %3lu \n", i, j );
 
                 double distance_x = sys->x[i] - sys->x[j] + offset_x;
                 double distance_y = sys->y[i] - sys->y[j] + offset_y;
@@ -193,13 +204,15 @@ double ljs( microscopic_system_t * sys, size_t N_sym){
                     double fx = (rr_14 - rr_8) * distance_x;
                     double fy = (rr_14 - rr_8) * distance_y;
                     double fz = (rr_14 - rr_8) * distance_z;
-
+                    
+                    #pragma omp critical
+                    {
                     sys->fx[i] += fx;
                     sys->fy[i] += fy;
                     sys->fz[i] += fz;
 
                     U += ( rr_12 - 2 * rr_6 );
-
+                    }
                 }
             }
         }
@@ -245,6 +258,7 @@ int warning( microscopic_system_t * sys ){
 
     // printf("=================WARNING=================\n");
 
+    #pragma omp parallel for
     for (int l = 1; l < 27; l++) 
     // for (int l = 1; l < 1; l++) 
     {

@@ -4,7 +4,7 @@ project(LJS LANGUAGES C)
 
 # find_package(BLAS REQUIRED)
 # find_package(LAPACK REQUIRED)
-# find_package(OpenMP REQUIRED)
+find_package(OpenMP REQUIRED)
 
 add_subdirectory(deps/argtable)
 
